@@ -1,0 +1,11 @@
+/* reset */
+* {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+body {
+  /*font-family: system-ui, "Segoe UI", Roboto, "Helvetica Neue", helvetica,*/
+  /*  sans-serif;*/
+}
