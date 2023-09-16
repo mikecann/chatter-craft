@@ -91,6 +91,8 @@ export function wait(ms: number) {
   return new Promise((resolve, reject) => setTimeout(resolve, ms));
 }
 
+export const pluralize = (num: number) => (num < 2 ? `` : `s`);
+
 export function waitForAtLeast<T>(minTimeMs: number, promise: Promise<T>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const start = Date.now();

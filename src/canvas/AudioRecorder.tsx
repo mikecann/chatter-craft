@@ -9,9 +9,9 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import { FaMicrophoneAlt, FaMicrophoneAltSlash } from "react-icons/fa";
-import { useErrors } from "./misc/useErrors";
-import { match } from "./misc/match";
-import { useTick } from "./misc/hooks";
+import { useErrors } from "../common/misc/useErrors";
+import { match } from "../common/misc/match";
+import { useTick } from "../common/misc/hooks";
 
 const maxRecordTimeMs = 10000;
 const SILENCE_THRESHOLD = 0;

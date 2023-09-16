@@ -1,16 +1,17 @@
 import * as React from "react";
 import { AudioRecorder } from "./AudioRecorder";
-import { useAction } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 
 const convexSiteUrl = import.meta.env.VITE_CONVEX_SITE_URL;
 
 interface Props {
-  children?: React.ReactNode;
+  canvasId: Id<"canvases">;
 }
 
-export const RecorderAndUploader: React.FC<Props> = ({ children }) => {
-  const transcode = useAction(api.openai.transcode);
+export const RecorderAndUploader: React.FC<Props> = ({ canvasId }) => {
+  const createCommand = useMutation(api.canvasCommands.createCanvasDocumentMutation);
 
   return (
     <AudioRecorder
@@ -26,8 +27,9 @@ export const RecorderAndUploader: React.FC<Props> = ({ children }) => {
         // const formData = new FormData();
         // formData.append("audio", blob, "audio.webm");
 
-        const resp = await transcode({
+        const resp = await createCommand({
           bytes: await blob.arrayBuffer(),
+          canvasId,
         });
 
         console.log(`GOT RESPONSE`, resp);
