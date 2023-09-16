@@ -18,9 +18,11 @@
     "@metaplex-foundation/js": "^0.19.4",
     "convex": "^1.2.1",
     "framer-motion": "^10.13.0",
+    "openai": "^4.7.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^4.10.1",
+    "react-router-dom": "^6.16.0",
     "variant": "dev"
   },
   "devDependencies": {

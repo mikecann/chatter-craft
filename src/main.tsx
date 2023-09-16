@@ -7,6 +7,8 @@ import { ClerkProvider, useAuth } from "@clerk/clerk-react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { ChakraProvider } from "@chakra-ui/react";
 import { theme } from "./common/theme";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { router } from "./routes";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
 
@@ -16,7 +18,7 @@ createRoot(document.getElementById("root")!).render(
       <ConvexProvider client={convex}>
         <ClerkProvider publishableKey="pk_test_bWF0dXJlLXJlZGZpc2gtOS5jbGVyay5hY2NvdW50cy5kZXYk">
           <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-            <App />
+            <RouterProvider router={router} />
           </ConvexProviderWithClerk>
         </ClerkProvider>
       </ConvexProvider>

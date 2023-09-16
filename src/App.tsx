@@ -1,20 +1,36 @@
-import { Box, Image } from "@chakra-ui/react";
+import { Box, Center, Image, VStack } from "@chakra-ui/react";
 import useStoreUserEffect from "./auth/useStoreUserEffect";
-import { AppSidebar } from "./app/AppSidebar";
+import { AppMenu } from "./app/AppSidebar";
 import github from "./github-corner-right.svg";
+import { Outlet } from "react-router-dom";
 
 export default function App() {
   useStoreUserEffect();
   return (
-    <Box background={`#121212`} position={"relative"}>
-      <AppSidebar />
+    <Box background={`#121212`} minHeight={"100dvh"} position={"relative"}>
+      <AppMenu />
+      <VStack
+        paddingTop={"70px"}
+        //backgroundColor={"rgba(255,0,0,0.2)"}
+        minHeight={"calc(100dvh)"}
+      >
+        <VStack
+          width={"100%"}
+          maxWidth={"800px"}
+          padding={"10px"}
+          //backgroundColor={"rgba(255,0,0,0.2)"}
+        >
+          <Outlet />
+        </VStack>
+      </VStack>
       <Image
-        position={"absolute"}
+        position={"fixed"}
         cursor={"pointer"}
         onClick={() => window.open(`https://github.com/mikecann/chatter-craft`, `_blank`)}
-        top={0}
+        bottom={0}
         right={0}
         src={github}
+        transform={"scale(1,-1)"}
       />
     </Box>
   );

@@ -1,16 +1,14 @@
 import * as React from "react";
 import { AppTitle } from "./AppTitle";
 import { MyAvatar } from "./MyAvatar";
-import { Box, Center, VStack } from "@chakra-ui/react";
+import { Box, Center, HStack, VStack } from "@chakra-ui/react";
 
 interface Props {}
 
-export const AppSidebar: React.FC<Props> = ({}) => {
+export const AppMenu: React.FC<Props> = ({}) => {
   return (
-    <VStack
-      minWidth={`20px`}
-      height={`calc(100dvh - 20px)`}
-      margin={"10px"}
+    <HStack
+      width={"100dvw"}
       position={"fixed"}
       background={"#1D1D1D"}
       borderRadius={"5px"}
@@ -21,11 +19,11 @@ export const AppSidebar: React.FC<Props> = ({}) => {
       spacing={`20px`}
       zIndex={100}
     >
+      <AppTitle />
+      <Box flex={1} />
       <Center>
         <MyAvatar />
       </Center>
-      <Box flex={1} />
-      <AppTitle />
-    </VStack>
+    </HStack>
   );
 };
