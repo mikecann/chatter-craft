@@ -15,3 +15,7 @@ It will require a Convex account to work but running `yarn dev` will take you th
 You will need to create a new `.env.local`, see `example.env.local` for whats needed in there. 
 
 You will also need to add an `OPENAI_API_KEY` environment variable on Convex
+
+## Hosting
+
+The production version of the site is hosted on Netlify. The backend is on Convex.
