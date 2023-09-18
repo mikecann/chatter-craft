@@ -1,5 +1,6 @@
 {
   "name": "chatter-craft",
+  "author": "mike.cann@gmail.com",
   "version": "0.0.1",
   "scripts": {
     "dev": "npm-run-all dev:init --parallel dev:server dev:client",
