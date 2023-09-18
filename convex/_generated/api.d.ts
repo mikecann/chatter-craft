@@ -16,6 +16,7 @@ import type {
 } from "convex/server";
 import type * as canvasCommands from "../canvasCommands";
 import type * as canvases from "../canvases";
+import type * as canvasMembers from "../canvasMembers";
 import type * as openai from "../openai";
 import type * as users from "../users";
 import type * as utils_misc from "../utils/misc";
@@ -32,6 +33,7 @@ import type * as workflows_mutateCanvasDocument from "../workflows/mutateCanvasD
 declare const fullApi: ApiFromModules<{
   canvasCommands: typeof canvasCommands;
   canvases: typeof canvases;
+  canvasMembers: typeof canvasMembers;
   openai: typeof openai;
   users: typeof users;
   "utils/misc": typeof utils_misc;

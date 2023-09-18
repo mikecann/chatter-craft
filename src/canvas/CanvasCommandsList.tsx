@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Avatar, Box, Heading, HStack, Spinner, Text, VStack } from "@chakra-ui/react";
+import { Avatar, Box, Center, Heading, HStack, Spinner, Text, VStack } from "@chakra-ui/react";
 import { Id } from "../../convex/_generated/dataModel";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -15,22 +15,31 @@ export const CanvasCommandsList: React.FC<Props> = ({ canvasId }) => {
   const commands = useQuery(api.canvasCommands.list, { canvasId: canvasId });
 
   return (
-    <VStack>
-      <Heading size={"sm"}>Commands</Heading>
+    <VStack alignItems={"stretch"} flex={1}>
+      <Center backgroundColor={"rgba(255,255,255,0.05)"} padding={"5px"} borderRadius={"10px"}>
+        <Heading size={"sm"}>Command History</Heading>
+      </Center>
       {iife(() => {
         if (commands == undefined) return <Spinner />;
 
         return (
           <VStack
             width={"400px"}
-            border={"1px solid rgba(255,255,255,0.5)"}
-            minHeight={"100px"}
+            overflowY={"scroll"}
+            //overscrollBehaviorY={"contain"}
+            //scrollSnapType={"y proximity"}
+            //flexDirection={"column-reverse"}
+            paddingRight={"5px"}
+            height={"calc(100vh - 300px)"}
+            maxHeight={"500px"}
             backgroundColor={"rgba(255,255,255,0.05)"}
-            borderRadius={"10px"}
-            padding={"10px"}
           >
-            {commands.map((command) => (
-              <CommandListItem key={command._id} command={command} />
+            {commands.map((command, i) => (
+              <CommandListItem
+                key={command._id}
+                command={command}
+                isLast={i == commands.length - 1}
+              />
             ))}
           </VStack>
         );

@@ -5,6 +5,7 @@ import {
   Center,
   CircularProgress,
   CircularProgressLabel,
+  HStack,
   VStack,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
@@ -137,7 +138,27 @@ export const AudioRecorder: React.FC<Props> = ({ onNewRecording }) => {
   //const [sliderValue, setSliderValue] = useState(50);
 
   return (
-    <VStack backgroundColor={"rgba(255,255,255,0.1)"} padding={"20px"} borderRadius={"10px"}>
+    <HStack
+      backgroundColor={"rgba(255,255,255,0.1)"}
+      padding={"10px"}
+      borderRadius={"10px"}
+      justifyContent={"space-evenly"}
+    >
+      {status.kind == "recording" ? (
+        <VStack>
+          <Button onClick={endRecording} colorScheme={"red"}>
+            End Recording
+          </Button>
+          <Button onClick={cancelRecording} colorScheme={"yellow"}>
+            Cancel Recording
+          </Button>
+        </VStack>
+      ) : (
+        <Button onClick={startRecording} colorScheme={"green"}>
+          Start Recording
+        </Button>
+      )}
+
       <Box>
         <CircularProgress
           value={match(status, {
@@ -145,7 +166,7 @@ export const AudioRecorder: React.FC<Props> = ({ onNewRecording }) => {
             stopped: () => 0,
           })}
           color="green.400"
-          size={"3em"}
+          size={"2.5em"}
         >
           <CircularProgressLabel>
             <Center position={"relative"}>
@@ -174,20 +195,6 @@ export const AudioRecorder: React.FC<Props> = ({ onNewRecording }) => {
           </CircularProgressLabel>
         </CircularProgress>
       </Box>
-      {status.kind == "recording" ? (
-        <VStack>
-          <Button onClick={endRecording} colorScheme={"red"}>
-            End Recording
-          </Button>
-          <Button onClick={cancelRecording} colorScheme={"yellow"}>
-            Cancel Recording
-          </Button>
-        </VStack>
-      ) : (
-        <Button onClick={startRecording} colorScheme={"green"}>
-          Start Recording
-        </Button>
-      )}
 
       {/*<Slider aria-label="slider-ex-4" defaultValue={30} onChange={(val) => setSliderValue(val)}>*/}
       {/*  <SliderMark value={25}>25%</SliderMark>*/}
@@ -211,6 +218,6 @@ export const AudioRecorder: React.FC<Props> = ({ onNewRecording }) => {
       {/*    <Box color="green.400" as={MdGraphicEq} />*/}
       {/*  </SliderThumb>*/}
       {/*</Slider>*/}
-    </VStack>
+    </HStack>
   );
 };

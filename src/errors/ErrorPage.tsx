@@ -1,9 +1,8 @@
 import * as React from "react";
 import { Box, Button, Center, Code, Heading, Text, VStack } from "@chakra-ui/react";
 import { Link, useRouteError } from "react-router-dom";
-import { errorToString } from "../common/misc/useErrors";
-import { GiTerror } from "react-icons/gi";
 import { TbFaceIdError } from "react-icons/tb";
+import { errorToString } from "../common/misc/errors";
 
 interface Props {}
 

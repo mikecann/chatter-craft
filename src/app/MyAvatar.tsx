@@ -13,6 +13,7 @@ import {
   MenuList,
 } from "@chakra-ui/react";
 import { FaSignInAlt, FaSignOutAlt } from "react-icons/fa";
+import { useFindMe } from "../common/useMe";
 
 interface Props {
   children?: React.ReactNode;
@@ -23,6 +24,7 @@ export const MyAvatar: React.FC<Props> = ({ children }) => {
   const clerk = useClerk();
   const { isAuthenticated } = useConvexAuth();
   const { user } = useUser();
+  const me = useFindMe();
 
   return (
     <Box>
@@ -36,7 +38,7 @@ export const MyAvatar: React.FC<Props> = ({ children }) => {
         <MenuList>
           {isAuthenticated ? (
             <>
-              <MenuGroup title={user?.primaryEmailAddress?.emailAddress}>
+              <MenuGroup title={me?.email}>
                 <MenuItem icon={<FaSignOutAlt />} color={"danger"} onClick={() => clerk.signOut()}>
                   Sign out
                 </MenuItem>

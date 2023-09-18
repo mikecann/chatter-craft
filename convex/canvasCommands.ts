@@ -1,11 +1,10 @@
-import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getMe } from "./utils/misc";
 import { omit, pick } from "../src/common/misc/misc";
 import { ensure } from "../src/common/misc/ensure";
 import { internal } from "./_generated/api";
 import { canvasCommandsTableDefinition } from "./schema";
-import { Doc } from "./_generated/dataModel";
 
 export const get = query({
   args: {
@@ -26,6 +25,7 @@ export const list = query({
     const commands = await db
       .query("canvasCommands")
       .withIndex("by_canvasId", (q) => q.eq("canvasId", canvasId))
+      .order("asc")
       .take(50);
 
     return Promise.all(
@@ -37,6 +37,19 @@ export const list = query({
           .then((user) => pick(user, "name", "_id", "pictureUrl")),
       })),
     );
+  },
+});
+
+export const listRecentCommands = internalMutation({
+  args: {
+    canvasId: v.id("canvases"),
+  },
+  handler: async ({ db }, { canvasId }) => {
+    return db
+      .query("canvasCommands")
+      .withIndex("by_canvasId", (q) => q.eq("canvasId", canvasId))
+      .order("asc")
+      .take(5);
   },
 });
 
@@ -73,6 +86,7 @@ export const createCanvasDocumentMutation = mutation({
       {
         commandId: command,
         commandAudio: bytes,
+        svgDocument: canvas.svgDocument,
       },
     );
 
@@ -86,11 +100,10 @@ export const updateAction = internalMutation({
     action: canvasCommandsTableDefinition.action,
   },
   handler: async ({ db }, { commandId, action }) => {
-    return ensure(
-      await db.patch(commandId, {
-        action,
-      }),
-      `could not find command ${commandId}`,
-    );
+    await db.patch(commandId, {
+      action,
+    });
+
+    return ensure(await db.get(commandId));
   },
 });

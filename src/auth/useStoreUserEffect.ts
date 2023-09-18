@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-react";
+import { useClerk, useUser } from "@clerk/clerk-react";
 import { useConvexAuth } from "convex/react";
 import { useEffect, useState } from "react";
 import { useMutation } from "convex/react";
@@ -11,15 +11,24 @@ import { iife } from "../common/misc/misc";
 export default function useStoreUserEffect() {
   const { isAuthenticated } = useConvexAuth();
   const { user: clerkUser } = useUser();
+  const clerk = useClerk();
   const [userId, setUserId] = useState<Id<"users"> | null>(null);
   const storeUser = useMutation(api.users.store);
   const { onNonCriticalError } = useErrors();
 
+  const email = clerkUser?.primaryEmailAddress?.emailAddress;
+
   useEffect(() => {
     if (!isAuthenticated) return;
-    iife(storeUser).catch(onNonCriticalError);
+    if (!clerkUser) return;
+    if (!email) {
+      onNonCriticalError(`User must have an email address!`);
+      clerk.signOut();
+      return;
+    }
+    storeUser({ email }).catch(onNonCriticalError);
     return () => setUserId(null);
-  }, [isAuthenticated, storeUser, clerkUser?.id]);
+  }, [isAuthenticated, storeUser, clerkUser?.id, clerkUser?.primaryEmailAddress?.emailAddress]);
 
   return userId;
 }

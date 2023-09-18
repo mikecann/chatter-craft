@@ -12,7 +12,7 @@ export const AppTitle: React.FC<Props> = ({}) => {
       <HStack color={"white"} opacity={0.5} _hover={{ opacity: 0.9 }}>
         <BsFillChatHeartFill />
         <Text userSelect={"none"} cursor={"pointer"} onClick={() => navigate("/")}>
-          ChatterCraft
+          Chatter Craft
         </Text>
       </HStack>
     </Box>

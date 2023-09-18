@@ -3,18 +3,18 @@ import useStoreUserEffect from "./auth/useStoreUserEffect";
 import { AppMenu } from "./app/AppMenu";
 import github from "./github-corner-right.svg";
 import { Outlet } from "react-router-dom";
-import { useIsAuthenticated } from "./auth/useIsAuthenticated";
 import { LoginPage } from "./auth/LoginPage";
 import { useConvexAuth, useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
 import { iife } from "./common/misc/misc";
+import { FillSpaceSpinner } from "./common/misc/FillSpaceSpinner";
+import { useFindMe } from "./common/useMe";
 
 export default function App() {
   useStoreUserEffect();
   const { isLoading } = useConvexAuth();
-  const me = useQuery(api.users.findMe);
+  const me = useFindMe();
   return (
-    <Box background={`#121212`} minHeight={"100dvh"} position={"relative"}>
+    <Box background={`#121212`} minHeight={"100dvh"} position={"relative"} overflowX={"hidden"}>
       <AppMenu />
       <VStack
         paddingTop={"70px"}
@@ -22,12 +22,11 @@ export default function App() {
       >
         <Box
           width={"100dvw"}
-          padding={"10px"}
           minHeight={"calc(100dvh - 70px)"}
           //backgroundColor={"rgba(255,0,0,0.2)"}
         >
           {iife(() => {
-            if (isLoading) return <Spinner />;
+            if (isLoading) return <FillSpaceSpinner />;
             if (!me) return <LoginPage />;
             return <Outlet />;
           })}

@@ -19,44 +19,42 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { useErrors } from "../common/misc/useErrors";
-import { ChatGPTModel, chatGPTModels } from "../../convex/schema";
-import { useNavigate } from "react-router-dom";
+import { api } from "../../../convex/_generated/api";
+import { useErrors } from "../../common/misc/useErrors";
+import { Canvas } from "../CanvasPage";
+import { ChatGPTModel, chatGPTModels } from "../../../convex/schema";
 
 interface Props {
   isOpen: boolean;
   onClose: () => unknown;
+  canvas: Canvas;
 }
 
-const defaultName = "";
-
-export const NewCanvasModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const [name, setName] = useState(defaultName);
-  const [model, setModel] = useState<ChatGPTModel>("chat_gpt_3.5_turbo");
-  const [isLoading, setIsLoading] = useState(false);
-  const create = useMutation(api.canvases.create);
+export const EditCanvasSettingsModal: React.FC<Props> = ({ isOpen, onClose, canvas }) => {
+  const [name, setName] = useState(canvas.name);
+  const [model, setModel] = useState<ChatGPTModel>(canvas.model);
+  const editSettings = useMutation(api.canvases.editSettings);
   const { onNonCriticalError } = useErrors();
-  const navigate = useNavigate();
 
-  const onCreate = () => {
-    setIsLoading(true);
-    create({
+  const onSave = () => {
+    editSettings({
+      canvasId: canvas._id,
       name,
       model,
     })
-      .then((canvasId) => {
-        navigate(`/canvas/${canvasId}`);
+      .then(() => {
+        setName("");
       })
-      .catch(onNonCriticalError)
-      .finally(() => setIsLoading(false));
+      .catch(onNonCriticalError);
+
+    onClose();
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size={"lg"}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Create Canvas</ModalHeader>
+        <ModalHeader>Edit Canvas Settings</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <VStack>
@@ -66,7 +64,7 @@ export const NewCanvasModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") onCreate();
+                  if (e.key === "Enter") onSave();
                 }}
               />
             </FormControl>
@@ -89,10 +87,9 @@ export const NewCanvasModal: React.FC<Props> = ({ isOpen, onClose }) => {
             transition={`all 0.2s ease`}
             isDisabled={name.length == 0}
             colorScheme={"blue"}
-            onClick={onCreate}
-            isLoading={isLoading}
+            onClick={onSave}
           >
-            Create
+            Save
           </Button>
         </ModalFooter>
       </ModalContent>

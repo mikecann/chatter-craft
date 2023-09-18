@@ -1,6 +1,18 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+export const chatGPTModel = v.union(v.literal("chat_gpt_3.5_turbo"), v.literal("chat_gpt_4"));
+export type ChatGPTModel = typeof chatGPTModel.type;
+export const chatGPTModels: ChatGPTModel[] = ["chat_gpt_3.5_turbo", "chat_gpt_4"];
+
+export const canvasMemberRole = v.union(v.literal("owner"), v.literal("editor"));
+export type CanvasMemberRole = typeof canvasMemberRole.type;
+export const canvasMemberRoles: CanvasMemberRole[] = ["owner", "editor"];
+
+export const canvasVisibility = v.union(v.literal("private"), v.literal("public"));
+export type CanvasVisibility = typeof canvasVisibility.type;
+export const canvasVisibilities: CanvasVisibility[] = ["private", "public"];
+
 export const canvasCommandsTableDefinition = {
   canvasId: v.id("canvases"),
   authorUserId: v.id("users"),
@@ -37,21 +49,28 @@ export const canvasCommandsTableDefinition = {
 export default defineSchema({
   users: defineTable({
     name: v.string(),
+    email: v.string(),
     pictureUrl: v.union(v.string(), v.null()),
     tokenIdentifier: v.string(),
-  }).index("by_token", ["tokenIdentifier"]),
+  })
+    .index("by_token", ["tokenIdentifier"])
+    .index("by_email", ["email"]),
 
   canvases: defineTable({
     svgDocument: v.string(),
+    model: chatGPTModel,
     name: v.string(),
     memberIds: v.array(v.id("canvasMembers")),
-  }),
+    visibility: canvasVisibility,
+  }).index("by_visibility", ["visibility"]),
 
   canvasMembers: defineTable({
     userId: v.id("users"),
-    role: v.union(v.literal("owner"), v.literal("editor")),
+    role: canvasMemberRole,
     canvasId: v.id("canvases"),
-  }).index("by_userId", ["userId"]),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_canvasId", ["canvasId"]),
 
   canvasCommands: defineTable(canvasCommandsTableDefinition).index("by_canvasId", ["canvasId"]),
 });

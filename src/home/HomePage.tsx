@@ -4,6 +4,7 @@ import {
   Button,
   Center,
   Heading,
+  Icon,
   Image,
   Spinner,
   Text,
@@ -16,12 +17,14 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { iife } from "../common/misc/misc";
 import { CanvasItem } from "./CanvasItem";
+import { FillSpaceSpinner } from "../common/misc/FillSpaceSpinner";
+import { listMyPrivateCanvases } from "../../convex/canvases";
 
 interface Props {}
 
 export const HomePage: React.FC<Props> = ({}) => {
   const [isNewCanvasModalOpen, setIsNewCanvasModalOpen] = React.useState(false);
-  const canvases = useQuery(api.canvases.list);
+  const canvases = useQuery(api.canvases.listMyPrivateCanvases);
 
   return (
     <Center width={"100%"}>
@@ -35,7 +38,7 @@ export const HomePage: React.FC<Props> = ({}) => {
             marginTop={"10px"}
           >
             {iife(() => {
-              if (!canvases) return <Spinner />;
+              if (!canvases) return <FillSpaceSpinner />;
 
               if (canvases.length == 0)
                 return (
@@ -54,13 +57,25 @@ export const HomePage: React.FC<Props> = ({}) => {
                 );
 
               return (
-                <Wrap padding={"20px"}>
-                  {canvases.map((canvas) => (
-                    <WrapItem key={canvas._id}>
-                      <CanvasItem canvas={canvas} />
-                    </WrapItem>
-                  ))}
-                </Wrap>
+                <VStack width={"100%"} alignItems={"flex-start"}>
+                  <Box
+                    alignSelf={"stretch"}
+                    background={"rgba(255,255,255,0.05)"}
+                    padding={`10px`}
+                    borderRadius={"10px"}
+                  >
+                    <Button colorScheme={"green"} onClick={() => setIsNewCanvasModalOpen(true)}>
+                      Create Canvas
+                    </Button>
+                  </Box>
+                  <Wrap padding={"20px"} justifyContent={"space-evenly"}>
+                    {canvases.map((canvas) => (
+                      <WrapItem key={canvas._id}>
+                        <CanvasItem canvas={canvas} />
+                      </WrapItem>
+                    ))}
+                  </Wrap>
+                </VStack>
               );
             })}
           </Box>

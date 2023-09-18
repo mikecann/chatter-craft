@@ -1,6 +1,7 @@
 import * as React from "react";
-import { Box, Button, Center, Heading, Text, VStack } from "@chakra-ui/react";
+import { Box, Button, Center, Heading, Icon, Text, VStack } from "@chakra-ui/react";
 import { useClerk } from "@clerk/clerk-react";
+import { BsFillChatHeartFill } from "react-icons/bs";
 
 interface Props {}
 
@@ -12,12 +13,13 @@ export const LoginPage: React.FC<Props> = ({}) => {
         padding={"20px"}
         backgroundColor={"rgba(255,255,255,0.1)"}
         borderRadius={"10px"}
-        maxWidth={"250px"}
+        maxWidth={"300px"}
         textAlign={"center"}
       >
-        <Heading size="lg">Welcome to Chatter Craft!</Heading>
-        <Text>Sign In to get started</Text>
-        <Button colorScheme={"blue"} onClick={() => clerk.openSignIn()}>
+        <Icon as={BsFillChatHeartFill} color={"green.300"} fontSize={"6em"} />
+        <Heading size="xl">Welcome to Chatter Craft!</Heading>
+        <Text opacity={0.8}>Sign In to get started</Text>
+        <Button colorScheme={"blue"} onClick={() => clerk.openSignIn()} marginTop={"20px"}>
           Sign In
         </Button>
       </VStack>
