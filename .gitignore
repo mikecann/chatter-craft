@@ -11,5 +11,5 @@ dist
 !.yarn/sdks
 !.yarn/versions
 .env.local
-
+yarn-error.log
 .env.local

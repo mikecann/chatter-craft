@@ -6,15 +6,17 @@ import { ensure } from "../../src/common/misc/ensure";
 import { api, internal } from "../_generated/api";
 import { errorToString } from "../../src/common/misc/errors";
 import isSvg from "is-svg";
-import { listRecentCommands } from "../canvasCommands";
+import { chatGPTModel } from "../schema";
+import { iife } from "../../src/common/misc/misc";
 
 export const beginMutateCanvasDocumentCommandWorkflow = internalAction({
   args: {
     commandId: v.id("canvasCommands"),
+    model: chatGPTModel,
     commandAudio: v.bytes(),
     svgDocument: v.string(),
   },
-  handler: async ({ runQuery, runMutation }, { commandId, commandAudio, svgDocument }) => {
+  handler: async ({ runQuery, runMutation }, { commandId, commandAudio, svgDocument, model }) => {
     let command = await runQuery(api.canvasCommands.get, { commandId });
 
     try {
@@ -61,12 +63,16 @@ export const beginMutateCanvasDocumentCommandWorkflow = internalAction({
         .map((c, i) => `${i + 1}. ${c.action.transcodedCommandText}`)
         .join("\n");
 
-      const prompt = `You are going to help me edit an existing SVG document. Here is the existing document:\n\n${svgDocument}\n\nThe edit I would like you to make is: "${command.action.transcodedCommandText}"\n\nFor added context here are the 5 most recent prompts I used to edit the document from most recent to least recent:\n\n${reccentCommandsStr}`;
+      const prompt = `You are going to help me edit an existing SVG document. Here is the existing document:\n\n${svgDocument}\n\nThe edit I would like you to make is: "${command.action.transcodedCommandText}"\n\nFor added context here are the 5 most recent prompts I used to edit the document from most recent to least recent:\n\n${reccentCommandsStr}\n\nDo not verify with me first or ask for any additional information or questions, simply do the edit, nothing more.`;
 
       console.log(`sending command`, prompt);
 
       const chatGPTResponse = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: iife(() => {
+          if (model == "chat_gpt_3.5_turbo") return "gpt-3.5-turbo";
+          if (model == "chat_gpt_4") return "gpt-4";
+          return "gpt-3.5-turbo";
+        }),
         messages: [{ role: "user", content: prompt }],
         functions: [
           {

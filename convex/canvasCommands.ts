@@ -87,6 +87,7 @@ export const createCanvasDocumentMutation = mutation({
         commandId: command,
         commandAudio: bytes,
         svgDocument: canvas.svgDocument,
+        model: canvas.model,
       },
     );
 

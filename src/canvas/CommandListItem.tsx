@@ -71,11 +71,9 @@ export const CommandListItem: React.FC<Props> = ({ command, isLast }) => {
             {formatDuration(duration, "single_long")} ago
           </Text>
           <Text>{command.action.transcodedCommandText}</Text>
+
           {command.action.errorMessage && (
-            <Alert status="error">
-              <AlertIcon />
-              {command.action.errorMessage}
-            </Alert>
+            <Text color={"red.500"}>{command.action.errorMessage}</Text>
           )}
         </VStack>
       </HStack>
