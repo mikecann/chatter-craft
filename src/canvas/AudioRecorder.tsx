@@ -32,8 +32,16 @@ type Status =
     };
 
 interface Props {
-  onNewRecording: (data: Blob[]) => unknown;
+  onNewRecording: (recording: Blob) => unknown;
 }
+
+// The backend only accepts Opus audio it can verify the length of, so ask for that
+// explicitly rather than taking the browser default (MP4/AAC on older Safari).
+const recordingTypes = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus"];
+
+export const pickRecordingType = (
+  recorder: { isTypeSupported(type: string): boolean } | undefined = globalThis.MediaRecorder,
+) => recordingTypes.find((type) => recorder?.isTypeSupported(type)) ?? null;
 
 export const AudioRecorder: React.FC<Props> = ({ onNewRecording }) => {
   const [status, setStatus] = useState<Status>({ kind: "stopped" });
@@ -82,15 +90,25 @@ export const AudioRecorder: React.FC<Props> = ({ onNewRecording }) => {
   }, [status.kind]);
 
   const startRecording = async () => {
+    const mimeType = pickRecordingType();
+    if (!mimeType)
+      return onNonCriticalError(
+        new Error(
+          "This browser can't record WebM or Ogg Opus audio. Please try a recent Chrome, Edge or Firefox.",
+        ),
+      );
+
+    let context: AudioContext | undefined;
+    let stream: MediaStream | undefined;
     try {
-      const context = new AudioContext();
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      context = new AudioContext();
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const source = context.createMediaStreamSource(stream);
       const analyser = context.createAnalyser();
       source.connect(analyser);
 
       const data: Blob[] = [];
-      const recorder = new MediaRecorder(stream);
+      const recorder = new MediaRecorder(stream, { mimeType });
       recorder.ondataavailable = (e) => data.push(e.data);
       recorder.start();
 
@@ -104,6 +122,9 @@ export const AudioRecorder: React.FC<Props> = ({ onNewRecording }) => {
         data,
       });
     } catch (err) {
+      // Release the microphone if anything after getUserMedia failed.
+      stream?.getTracks().forEach((track) => track.stop());
+      context?.close();
       onNonCriticalError(err);
     }
   };
@@ -119,7 +140,7 @@ export const AudioRecorder: React.FC<Props> = ({ onNewRecording }) => {
   const endRecording = () => {
     if (status.kind != "recording") return;
     status.recorder.addEventListener("stop", (e) => {
-      onNewRecording(status.data);
+      onNewRecording(new Blob(status.data, { type: status.recorder.mimeType }));
     });
     stopRecording();
   };

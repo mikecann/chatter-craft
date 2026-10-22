@@ -14,12 +14,15 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as abuse from "../abuse";
+import type * as audio from "../audio";
 import type * as canvasCommands from "../canvasCommands";
-import type * as canvases from "../canvases";
 import type * as canvasMembers from "../canvasMembers";
+import type * as canvases from "../canvases";
 import type * as openai from "../openai";
 import type * as users from "../users";
 import type * as utils_misc from "../utils/misc";
+import type * as workflows_editBudget from "../workflows/editBudget";
 import type * as workflows_mutateCanvasDocument from "../workflows/mutateCanvasDocument";
 
 /**
@@ -31,12 +34,15 @@ import type * as workflows_mutateCanvasDocument from "../workflows/mutateCanvasD
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  abuse: typeof abuse;
+  audio: typeof audio;
   canvasCommands: typeof canvasCommands;
-  canvases: typeof canvases;
   canvasMembers: typeof canvasMembers;
+  canvases: typeof canvases;
   openai: typeof openai;
   users: typeof users;
   "utils/misc": typeof utils_misc;
+  "workflows/editBudget": typeof workflows_editBudget;
   "workflows/mutateCanvasDocument": typeof workflows_mutateCanvasDocument;
 }>;
 export declare const api: FilterApi<

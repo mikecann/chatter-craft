@@ -38,8 +38,18 @@ export const store = mutation({
 
 export const get = query({
   args: { id: v.id("users") },
-  handler: async ({ db }, { id }) => {
-    return await db.get(id);
+  handler: async ({ db, auth }, { id }) => {
+    if (!(await auth.getUserIdentity())) return null;
+    const user = await db.get(id);
+    // Member lists need a public profile, never an email or authentication identifier.
+    return user
+      ? {
+          _id: user._id,
+          _creationTime: user._creationTime,
+          name: user.name,
+          pictureUrl: user.pictureUrl,
+        }
+      : null;
   },
 });
 
