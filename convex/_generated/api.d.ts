@@ -9,11 +9,9 @@
  * @module
  */
 
-import type {
-  ApiFromModules,
-  FilterApi,
-  FunctionReference,
-} from "convex/server";
+import type { ApiFromModules, FilterApi, FunctionReference } from "convex/server";
+import type * as abuse from "../abuse";
+import type * as audio from "../audio";
 import type * as canvasCommands from "../canvasCommands";
 import type * as canvases from "../canvases";
 import type * as canvasMembers from "../canvasMembers";
@@ -31,6 +29,8 @@ import type * as workflows_mutateCanvasDocument from "../workflows/mutateCanvasD
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  abuse: typeof abuse;
+  audio: typeof audio;
   canvasCommands: typeof canvasCommands;
   canvases: typeof canvases;
   canvasMembers: typeof canvasMembers;
@@ -39,11 +39,5 @@ declare const fullApi: ApiFromModules<{
   "utils/misc": typeof utils_misc;
   "workflows/mutateCanvasDocument": typeof workflows_mutateCanvasDocument;
 }>;
-export declare const api: FilterApi<
-  typeof fullApi,
-  FunctionReference<any, "public">
->;
-export declare const internal: FilterApi<
-  typeof fullApi,
-  FunctionReference<any, "internal">
->;
+export declare const api: FilterApi<typeof fullApi, FunctionReference<any, "public">>;
+export declare const internal: FilterApi<typeof fullApi, FunctionReference<any, "internal">>;

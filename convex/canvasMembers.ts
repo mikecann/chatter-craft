@@ -11,6 +11,11 @@ export const listForCanvas = query({
     canvasId: v.id("canvases"),
   },
   handler: async ({ db, auth }, { canvasId }) => {
+    // Same rule as canvases.get: only members of a canvas can see who else is on it.
+    const me = await getMe({ auth, db });
+    const membership = await findCanvasMembershipForUser({ db, canvasId, userId: me._id });
+    if (!membership) throw new Error("You are not a member of this canvas");
+
     const canvas = ensure(await db.get(canvasId));
 
     const members = await Promise.all(canvas.memberIds.map((memberId) => db.get(memberId))).then(
@@ -27,6 +32,10 @@ export const findForUser = query({
     userId: v.id("users"),
   },
   handler: async ({ db, auth }, { canvasId, userId }) => {
+    const me = await getMe({ auth, db });
+    const membership = await findCanvasMembershipForUser({ db, canvasId, userId: me._id });
+    if (!membership) throw new Error("You are not a member of this canvas");
+
     return findCanvasMembershipForUser({
       canvasId,
       userId,
@@ -48,7 +57,7 @@ export const changeMemberRole = mutation({
 
     const myMembership = await findCanvasMembershipForUser({
       canvasId: member.canvasId,
-      userId: member.userId,
+      userId: me._id,
       db,
     });
 

@@ -47,6 +47,12 @@ export const canvasCommandsTableDefinition = {
 };
 
 export default defineSchema({
+  abuseLimits: defineTable({
+    key: v.string(),
+    windowStart: v.number(),
+    used: v.number(),
+  }).index("by_key", ["key"]),
+
   users: defineTable({
     name: v.string(),
     email: v.string(),
