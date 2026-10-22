@@ -41,7 +41,7 @@ Expected test count after this change: 10.
 
 ## Netlify builds
 
-`netlify.toml` uses `scripts/netlify-build.mjs`. Production deploys Convex and builds the frontend against the deployed URL. Deploy previews and branch builds only build the frontend, defaulting to the existing development backend if no `VITE_CONVEX_URL` is configured, and remove `CONVEX_DEPLOY_KEY` from the frontend build environment. A preview cannot deploy its branch to production through the old dashboard build command.
+`netlify.toml` uses `scripts/netlify-build.mjs`. Production builds the frontend with Netlify's configured backend URL, then deploys Convex using the pinned 1.2.1 CLI's supported command. Deploy previews and branch builds only build the frontend, defaulting to the existing development backend if no `VITE_CONVEX_URL` is configured. All frontend builds remove `CONVEX_DEPLOY_KEY` from their environment. A preview cannot deploy its branch to production through the old dashboard build command.
 
 ## Files changed
 
