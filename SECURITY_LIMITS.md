@@ -24,7 +24,7 @@ The new environment variables are optional numeric daily ceilings. Unset, empty,
 
 ## Review and setup
 
-Changes are local and uncommitted. No deploy, merge, push, credential rotation, or real provider/deployment test was run. Root should review the diff, deploy the additive schema with the functions through the normal project workflow, and smoke-test the normal flow. Existing provider credentials remain required and unchanged. Defaults apply without adding any environment variables.
+Deploy the additive schema and functions through the normal project workflow, then smoke-test the normal flow. Tests mock paid providers and never send real transactions or generated content. Existing provider credentials remain required and unchanged. Defaults apply without adding any environment variables.
 
 
 ## Validation
