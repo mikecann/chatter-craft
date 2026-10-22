@@ -1,0 +1,2 @@
+[build]
+command = "node scripts/netlify-build.mjs"

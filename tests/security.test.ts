@@ -7,6 +7,8 @@ import { reserveLimits, DAY } from "../convex/abuse";
 import { getFunctionName } from "convex/server";
 import { listForCanvas, findForUser } from "../convex/canvasMembers";
 import { pickRecordingType } from "../src/canvas/AudioRecorder";
+import { countTokens } from "gpt-tokenizer/esm/encoding/cl100k_base";
+import { EDIT_ROOM_TOKENS, MAX_OUTPUT_TOKENS } from "../convex/workflows/editBudget";
 
 afterEach(() => {
   delete process.env.CHATTER_GLOBAL_DAILY_LIMIT;
@@ -20,7 +22,12 @@ const auth = (token: string | null) => ({
   getUserIdentity: async () => (token ? { tokenIdentifier: token } : null),
 });
 
-function seedCanvas(db: TestDb, token: string) {
+function seedCanvas(
+  db: TestDb,
+  token: string,
+  svgDocument = '<svg xmlns="http://www.w3.org/2000/svg"/>',
+  model = "chat_gpt_4",
+) {
   const userId = db.seed("users", {
     tokenIdentifier: token,
     email: `${token}@example.invalid`,
@@ -29,8 +36,8 @@ function seedCanvas(db: TestDb, token: string) {
   });
   const canvasId = db.seed("canvases", {
     memberIds: [],
-    svgDocument: '<svg xmlns="http://www.w3.org/2000/svg"/>',
-    model: "chat_gpt_4",
+    svgDocument,
+    model,
   });
   const memberId = db.seed("canvasMembers", { canvasId, userId, role: "owner" });
   db.rows.get(canvasId).memberIds = [memberId];
@@ -116,36 +123,43 @@ test("secondary quota refusals write nothing and rollover reuses the counter row
   expect(await db.query("abuseLimits").collect()).toHaveLength(1);
 });
 
-test("a reserved workflow completes without browser auth and caps GPT output", async () => {
-  const toFile = mock(async (..._args: any[]) => new Blob());
-  const svg = '<svg xmlns="http://www.w3.org/2000/svg"><circle r="10"/></svg>';
-  const transcribe = mock(async () => ({ text: "Add a circle" }));
-  const complete = mock(async () => ({
-    choices: [
-      {
-        message: {
-          function_call: {
-            name: "update_svg_document",
-            arguments: JSON.stringify({ svgDocument: svg }),
-          },
+const transcribe = mock(async (..._args: any[]) => ({ text: "Add a circle" }));
+let reply = "";
+const complete = mock(async (..._args: any[]) => ({
+  choices: [
+    {
+      message: {
+        function_call: {
+          name: "update_svg_document",
+          arguments: JSON.stringify({ svgDocument: reply }),
         },
       },
-    ],
-  }));
-  mock.module("openai", () => ({
-    default: class {
-      audio = { transcriptions: { create: transcribe } };
-      chat = { completions: { create: complete } };
     },
-    toFile: toFile,
-  }));
+  ],
+}));
+const toFile = mock(async (..._args: any[]) => new Blob());
+mock.module("openai", () => ({
+  default: class {
+    audio = { transcriptions: { create: transcribe } };
+    chat = { completions: { create: complete } };
+  },
+  toFile: toFile,
+}));
+
+// Schedules an edit through the real mutation, then runs the scheduled workflow
+// with mocked providers. The model echoes `replySvg` back as its edit.
+async function runEditWorkflow(svgDocument: string, model: string, replySvg: string) {
+  transcribe.mockClear();
+  complete.mockClear();
+  toFile.mockClear();
+  reply = replySvg;
   const { beginMutateCanvasDocumentCommandWorkflow } = await import(
     "../convex/workflows/mutateCanvasDocument"
   );
   const commands = await import("../convex/canvasCommands");
   const { updateSvgDocument } = await import("../convex/canvases");
   const db = new TestDb();
-  const { canvasId } = seedCanvas(db, "owner");
+  const { canvasId } = seedCanvas(db, "owner", svgDocument, model);
   let scheduled: any;
   const commandId = await invoke(
     createCanvasDocumentMutation,
@@ -161,6 +175,7 @@ test("a reserved workflow completes without browser auth and caps GPT output", a
     { canvasId, bytes: recording },
   );
   const log = spyOn(console, "log").mockImplementation(() => {});
+  const error = spyOn(console, "error").mockImplementation(() => {});
   process.env.OPENAI_API_KEY = "test-only-openai-key";
   try {
     await invoke(
@@ -182,15 +197,64 @@ test("a reserved workflow completes without browser auth and caps GPT output", a
     );
   } finally {
     log.mockRestore();
+    error.mockRestore();
     delete process.env.OPENAI_API_KEY;
   }
-  expect((await db.get(commandId)).action.status.kind).toBe("success");
-  expect((await db.get(canvasId)).svgDocument).toBe(svg);
+  const command = await db.get(commandId);
+  return { status: command.action.status, svg: (await db.get(canvasId)).svgDocument };
+}
+
+// Dense SVG whose JSON form needs heavy escaping: quotes, backslashes, entities, non-ASCII.
+function complexSvg(shapes: number) {
+  const body = Array.from(
+    { length: shapes },
+    (_, i) =>
+      `<path d="M${(i * 7) % 500} ${(i * 13) % 500}l${i % 9}.5 ${i % 7}.25z" fill="#${((i * 99991) % 0xffffff)
+        .toString(16)
+        .padStart(6, "0")}"/><text x="${i}">"q\\${i}" &amp; é</text>`,
+  );
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">${body.join("\n")}</svg>`;
+}
+
+test("a reserved workflow completes without browser auth and caps GPT output", async () => {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg"><circle r="10"/></svg>';
+  const result = await runEditWorkflow('<svg xmlns="http://www.w3.org/2000/svg"/>', "chat_gpt_4", svg);
+  expect(result.status.kind).toBe("success");
+  expect(result.svg).toBe(svg);
   expect(transcribe).toHaveBeenCalledTimes(1);
   expect(complete).toHaveBeenCalledTimes(1);
-  expect((complete.mock.calls[0] as any)[0].max_tokens).toBe(2048);
+  expect((complete.mock.calls[0] as any)[0].max_tokens).toBe(MAX_OUTPUT_TOKENS);
   expect(toFile.mock.calls[0][1]).toEndWith(".webm");
   expect(toFile.mock.calls[0][2]).toEqual({ type: "audio/webm" });
+});
+
+test("the completion budget fits the whole existing document, or the edit is refused before paid calls", async () => {
+  // Near the gpt-4 limit: prompt + returned document + edit room only just fit 8,192 tokens.
+  const nearLimit = complexSvg(81);
+  const ok = await runEditWorkflow(nearLimit, "chat_gpt_4", nearLimit);
+  expect(ok.status.kind).toBe("success");
+  expect(ok.svg).toBe(nearLimit);
+  const request = (complete.mock.calls[0] as any)[0];
+  const returned = countTokens(JSON.stringify({ svgDocument: nearLimit }));
+  expect(request.max_tokens).toBeGreaterThanOrEqual(returned + EDIT_ROOM_TOKENS);
+  expect(request.max_tokens).toBeLessThanOrEqual(MAX_OUTPUT_TOKENS);
+  const promptTokens =
+    countTokens(request.messages[0].content) + countTokens(JSON.stringify(request.functions));
+  expect(promptTokens + request.max_tokens).toBeLessThanOrEqual(8_192);
+
+  // Under the 12,000-byte ceiling, but the document can't be returned in full.
+  for (const [svg, model] of [
+    [complexSvg(82), "chat_gpt_4"],
+    [complexSvg(140), "chat_gpt_3.5_turbo"],
+  ]) {
+    expect(new TextEncoder().encode(svg).byteLength).toBeLessThan(12_000);
+    const refused = await runEditWorkflow(svg, model, svg);
+    expect(refused.status.kind).toBe("errored");
+    expect(refused.status.message).toContain("too detailed");
+    expect(refused.svg).toBe(svg);
+    expect(transcribe).not.toHaveBeenCalled();
+    expect(complete).not.toHaveBeenCalled();
+  }
 });
 
 test("Chrome-style streaming WebM and Ogg Opus pass; longer or unverifiable recordings do not", async () => {

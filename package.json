@@ -19,6 +19,7 @@
     "@metaplex-foundation/js": "^0.19.4",
     "convex": "^1.2.1",
     "framer-motion": "^10.13.0",
+    "gpt-tokenizer": "2.9.0",
     "is-svg": "^5.0.0",
     "openai": "^4.7.0",
     "prettier": "^3.0.3",

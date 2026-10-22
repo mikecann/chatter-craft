@@ -7,9 +7,14 @@ import { internal } from "../_generated/api";
 import { errorToString } from "../../src/common/misc/errors";
 import isSvg from "is-svg";
 import { chatGPTModel } from "../schema";
-import { iife } from "../../src/common/misc/misc";
 import { validateCommandAudio } from "../audio";
 import { MAX_SVG_BYTES } from "../abuse";
+import {
+  SVG_FUNCTIONS,
+  UNKNOWN_TEXT_ALLOWANCE_TOKENS,
+  buildEditPrompt,
+  planEditCompletion,
+} from "./editBudget";
 
 export const beginMutateCanvasDocumentCommandWorkflow = internalAction({
   args: {
@@ -25,6 +30,14 @@ export const beginMutateCanvasDocumentCommandWorkflow = internalAction({
       const format = validateCommandAudio(commandAudio);
       if (new TextEncoder().encode(svgDocument).byteLength > MAX_SVG_BYTES)
         throw new Error("Canvas is too large");
+      const openAIModel = model == "chat_gpt_4" ? "gpt-4" : "gpt-3.5-turbo";
+      // Refuse before Whisper if the document can't be returned in full by this model.
+      planEditCompletion(
+        openAIModel,
+        svgDocument,
+        buildEditPrompt(svgDocument, "", ""),
+        UNKNOWN_TEXT_ALLOWANCE_TOKENS,
+      );
       const openai = new OpenAI({
         apiKey: ensure(process.env.OPENAI_API_KEY, `missing OPENAI_API_KEY`),
         maxRetries: 0,
@@ -71,35 +84,21 @@ export const beginMutateCanvasDocumentCommandWorkflow = internalAction({
         .map((c, i) => `${i + 1}. ${c.action.transcodedCommandText?.slice(0, 200) ?? ""}`)
         .join("\n");
 
-      const prompt = `You are going to help me edit an existing SVG document. Here is the existing document:\n\n${svgDocument}\n\nThe edit I would like you to make is: "${command.action.transcodedCommandText}"\n\nFor added context here are the 5 most recent prompts I used to edit the document from most recent to least recent:\n\n${reccentCommandsStr}\n\nDo not verify with me first or ask for any additional information or questions, simply do the edit, nothing more.`;
+      const prompt = buildEditPrompt(
+        svgDocument,
+        command.action.transcodedCommandText ?? "",
+        reccentCommandsStr,
+      );
+      const maxTokens = planEditCompletion(openAIModel, svgDocument, prompt);
 
       console.log(`sending command`, prompt);
 
       const chatGPTResponse = await openai.chat.completions.create({
-        model: iife(() => {
-          if (model == "chat_gpt_3.5_turbo") return "gpt-3.5-turbo";
-          if (model == "chat_gpt_4") return "gpt-4";
-          return "gpt-3.5-turbo";
-        }),
+        model: openAIModel,
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 2048,
+        max_tokens: maxTokens,
         n: 1,
-        functions: [
-          {
-            name: "update_svg_document",
-            description: "Updates the SVG document",
-            parameters: {
-              type: "object",
-              properties: {
-                svgDocument: {
-                  type: "string",
-                  description: "The text that makes up the entire SVG document",
-                },
-              },
-              required: ["svgDocument"],
-            },
-          },
-        ],
+        functions: SVG_FUNCTIONS,
         function_call: "auto", // auto is default, but we'll be explicit
       });
 

@@ -10,7 +10,11 @@ A recording must be WebM/Opus or Ogg/Opus audio, at most 512000 bytes and 15 sec
 
 The recorder asks the browser for `audio/webm;codecs=opus`, then `audio/ogg;codecs=opus`, instead of its default type, so current Chrome, Edge and Firefox record a supported format. MP4/AAC (what older Safari records) is rejected with a clear message: an MP4's playable length comes from its sample tables, and checking those as strictly as Opus packets would need a much larger parser, so it is not accepted unverified. On a browser with neither Opus type, Start Recording explains the problem before asking for the microphone. The microphone and audio context are released if setup fails, and upload errors (format or usage limit) are shown to the user. The UI still records for at most 10 seconds.
 
-SVG input/output is capped at 12000 UTF-8 bytes, transcripts at 1000 characters and recent-history entries at 200 characters each. GPT produces at most 2048 output tokens, one completion; OpenAI retries are disabled and requests have 30-second timeouts.
+SVG input/output is capped at 12000 UTF-8 bytes, transcripts at 1000 characters and recent-history entries at 200 characters each. OpenAI retries are disabled and requests have 30-second timeouts, one completion per edit.
+
+The `update_svg_document` call returns the whole document as escaped JSON, so bytes alone don't say whether an edit can finish. `convex/workflows/editBudget.ts` counts cl100k_base text tokens with `gpt-tokenizer`, pinned at 2.9.0 with no dependencies or install scripts. The completion needs the existing document's JSON tokens plus 64 framing tokens plus 512 for the edit, and gets `max_tokens` = the smallest of 4096, the model's output limit and what's left of its context after the prompt and function schema. gpt-4 has an 8,192-token context and gpt-3.5-turbo 16,385 with 4,096 max output ([gpt-4](https://developers.openai.com/api/docs/models/gpt-4), [gpt-3.5-turbo](https://developers.openai.com/api/docs/models/gpt-3.5-turbo)).
+
+The first check runs before Whisper with 600 tokens held for the transcript and history, so a document that already cannot fit fails with "too detailed" before any paid call. A second check uses the actual transcript and recent history before GPT; if those exceed the reserved allowance, this check can refuse an edit after transcription has been charged. In practice an editable canvas is about 3,300 tokens of SVG on gpt-4 and 3,500 on gpt-3.5-turbo, roughly 6.5 KB of dense, quote-heavy markup. The 12000-byte ceiling stays as the outer guard and simple canvases still fit. The tokenizer's ~1 MB rank table only loads in the Node action, never in mutations. The reservation is still used by a refused workflow, as with any other failure.
 
 No existing canvas documents are rewritten or deleted. Oversized existing canvases remain viewable but need to be reduced before requesting another AI edit. The fixtures are generated silence or a 440 Hz tone, not user audio. `bun tests/make-audio-fixtures.ts` regenerates the tone fixtures with local ffmpeg/libopus and rewrites the WebM into the layout Chrome's MediaRecorder streams.
 
@@ -33,7 +37,11 @@ Run `bun --no-env-file test tests/security.test.ts`. These tests invoke register
 
 Run `./node_modules/.bin/tsc -p convex --noEmit --pretty false` for backend types. Run `./node_modules/.bin/tsc --noEmit --pretty false` for app types.
 
-Expected test count after this change: 9.
+Expected test count after this change: 10.
+
+## Netlify builds
+
+`netlify.toml` uses `scripts/netlify-build.mjs`. Production deploys Convex and builds the frontend against the deployed URL. Deploy previews and branch builds only build the frontend, defaulting to the existing development backend if no `VITE_CONVEX_URL` is configured, and remove `CONVEX_DEPLOY_KEY` from the frontend build environment. A preview cannot deploy its branch to production through the old dashboard build command.
 
 ## Files changed
 
@@ -46,7 +54,9 @@ Expected test count after this change: 9.
 - `convex/openai.ts`
 - `convex/schema.ts`
 - `convex/users.ts`
+- `convex/workflows/editBudget.ts`
 - `convex/workflows/mutateCanvasDocument.ts`
+- `package.json`
 - `src/canvas/AudioRecorder.tsx`
 - `src/canvas/RecorderAndUploader.tsx`
 - `tests/fixtures/command-16s.ogg`
@@ -58,3 +68,4 @@ Expected test count after this change: 9.
 - `tests/make-audio-fixtures.ts`
 - `tests/security.test.ts`
 - `tests/support.ts`
+- `yarn.lock`
